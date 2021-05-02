@@ -92,4 +92,56 @@ public class ReportingStructureServiceImplTest {
         assertNotNull(createdStructure);
         assertEquals(1, createdStructure.getNumberOfReports());
     }
+
+    @Test
+    public void testReportStructureWithNestedDependants() {
+        Employee testEmployee1 = new Employee();
+        testEmployee1.setFirstName("John");
+        testEmployee1.setLastName("Doe");
+        testEmployee1.setDepartment("Engineering");
+        testEmployee1.setPosition("Developer");
+
+        Employee testEmployee2 = new Employee();
+        testEmployee2.setFirstName("Jane");
+        testEmployee2.setLastName("Doe");
+        testEmployee2.setDepartment("Engineering");
+        testEmployee2.setPosition("Developer");
+
+        Employee testManager = new Employee();
+        testManager.setFirstName("Bill");
+        testManager.setLastName("Manager");
+        testManager.setDepartment("Engineering");
+        testManager.setPosition("Manager");
+        List<Employee> reports = new ArrayList<Employee>();
+        reports.add(testEmployee1);
+        reports.add(testEmployee2);
+        testManager.setDirectReports(reports);
+
+        
+
+        Employee testBoss = new Employee();
+        testBoss.setFirstName("James");
+        testBoss.setLastName("DaBoss");
+        testBoss.setDepartment("Engineering");
+        testBoss.setPosition("Boss");
+        List<Employee> bossreports = new ArrayList<Employee>();
+        bossreports.add(testManager);
+        testBoss.setDirectReports(bossreports);
+
+        //Test that employee creation works
+        Employee createdEmployee = restTemplate.postForEntity(employeeUrl, testManager, Employee.class).getBody();
+        assertNotNull(createdEmployee.getEmployeeId());
+        assertEquals(2, createdEmployee.getDirectReports().size());
+        Employee createdBoss = restTemplate.postForEntity(employeeUrl, testBoss, Employee.class).getBody();
+        assertNotNull(createdBoss.getEmployeeId());
+        assertEquals(1, createdBoss.getDirectReports().size());
+
+
+        //assert created structure exists and has no reports
+        ReportingStructure testStructure = new ReportingStructure();
+        testStructure.updateEmployee(testBoss);
+        ReportingStructure createdStructure = restTemplate.postForEntity(reportUrl, createdBoss, ReportingStructure.class).getBody();
+        assertNotNull(createdStructure);
+        assertEquals(3, createdStructure.getNumberOfReports());
+    }
 }
